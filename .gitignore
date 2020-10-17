@@ -1,0 +1,9 @@
+.prod
+storage/token_info.json
+
+*.env
+*.env.local
+vendor
+
+web.config
+.idea
