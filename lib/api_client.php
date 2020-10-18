@@ -106,26 +106,27 @@ function getApiClient()
                     'baseDomain' => $apiClient->getAccountBaseDomain(),
                 ]);
             }
-            return $accessToken;
+            $apiClient->setAccessToken($accessToken);
         } catch (Exception $e) {
             die((string)$e);
         }
     }
-
-    $apiClient->setAccessToken($accessToken)
-        ->setAccountBaseDomain($accessToken->getValues()['baseDomain'])
-        ->onAccessTokenRefresh(
-            function (AccessTokenInterface $accessToken, string $baseDomain) {
-                saveToken(
-                    [
-                        'accessToken' => $accessToken->getToken(),
-                        'refreshToken' => $accessToken->getRefreshToken(),
-                        'expires' => $accessToken->getExpires(),
-                        'baseDomain' => $baseDomain,
-                    ]
-                );
-            }
-        );
+    else {
+        $apiClient->setAccessToken($accessToken)
+            ->setAccountBaseDomain($accessToken->getValues()['baseDomain'])
+            ->onAccessTokenRefresh(
+                function (AccessTokenInterface $accessToken, string $baseDomain) {
+                    saveToken(
+                        [
+                            'accessToken' => $accessToken->getToken(),
+                            'refreshToken' => $accessToken->getRefreshToken(),
+                            'expires' => $accessToken->getExpires(),
+                            'baseDomain' => $baseDomain,
+                        ]
+                    );
+                }
+            );
+    }
     return [$apiClient, $accessToken];
 }
 

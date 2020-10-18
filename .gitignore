@@ -1,5 +1,5 @@
 .prod
-storage/token_info.json
+token_info.json
 
 *.env
 *.env.local

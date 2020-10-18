@@ -4,7 +4,7 @@ require_once 'vendor/autoload.php';
 require_once 'lib/functions.php';
 require_once 'lib/api_client.php';
 
-//use AmoCRM\Exceptions\AmoCRMApiException;
+use AmoCRM\Exceptions\AmoCRMApiException;
 
 function main()
 {
@@ -23,34 +23,38 @@ function main()
     $view['user'] = $ownerDetails->getName();
     $view['leads'] = [];
     $descFieldId = _env('DESC_FIELD_ID');
-    foreach ($leadsService->get()->all() as $lead) {
-        $leadArr = [];
-        $leadArr['name'] = $lead->name;
-        $leadArr['price'] = $lead->price;
-        $leadArr['company'] = [];
-        $leadArr['contacts'] = [];
-        $leadArr['user'] = $usersService->getOne($lead->responsibleUserId)->name;
-        $leadArr['desc'] = getCustomFieldValueById($lead, $descFieldId);
-        foreach ($leadsService->getLinks($lead)->all() as $link) {
-            $linkType = $link->toEntityType;
-            $linkId = $link->toEntityId;
-            if ($linkType == 'companies') {
-                $company = $companiesService->getOne($linkId);
-                $companyArr = [];
-                $companyArr['name'] = $company->name;
-                $companyArr['city'] = getCustomFieldValue($company, 'ADDRESS');
-                $leadArr['company'] = $companyArr;
+    try {
+        foreach ($leadsService->get()->all() as $lead) {
+            $leadArr = [];
+            $leadArr['name'] = $lead->name;
+            $leadArr['price'] = $lead->price;
+            $leadArr['company'] = [];
+            $leadArr['contacts'] = [];
+            $leadArr['user'] = $usersService->getOne($lead->responsibleUserId)->name;
+            $leadArr['desc'] = getCustomFieldValueById($lead, $descFieldId);
+            foreach ($leadsService->getLinks($lead)->all() as $link) {
+                $linkType = $link->toEntityType;
+                $linkId = $link->toEntityId;
+                if ($linkType == 'companies') {
+                    $company = $companiesService->getOne($linkId);
+                    $companyArr = [];
+                    $companyArr['name'] = $company->name;
+                    $companyArr['city'] = getCustomFieldValue($company, 'ADDRESS');
+                    $leadArr['company'] = $companyArr;
+                } elseif ($linkType == 'contacts') {
+                    $contact = $contactsService->getOne($linkId);
+                    $contactArr = [];
+                    $contactArr['name'] = $contact->name;
+                    $contactArr['phone'] = getCustomFieldValue($contact, 'PHONE');
+                    $contactArr['email'] = getCustomFieldValue($contact, 'EMAIL');
+                    $leadArr['contacts'][] = $contactArr;
+                }
             }
-            elseif ($linkType == 'contacts') {
-                $contact = $contactsService->getOne($linkId);
-                $contactArr = [];
-                $contactArr['name'] = $contact->name;
-                $contactArr['phone'] = getCustomFieldValue($contact, 'PHONE');
-                $contactArr['email'] = getCustomFieldValue($contact, 'EMAIL');
-                $leadArr['contacts'][] = $contactArr;
-            }
+            $view['leads'][] = $leadArr;
         }
-        $view['leads'][] = $leadArr;
+    }
+    catch (AmoCRMApiException $e) {
+        printError($e);
     }
 
     return $view;

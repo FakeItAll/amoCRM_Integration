@@ -5,14 +5,13 @@ require_once 'lib/functions.php';
 require_once 'lib/api_client.php';
 require_once 'lib/handlers.php';
 
-//use AmoCRM\Exceptions\AmoCRMApiException;
+use AmoCRM\Exceptions\AmoCRMApiException;
 
 function main()
 {
     init();
 
     [$apiClient, $accessToken] = getApiClient();
-    handlersExecute($apiClient);
 
     $leadsService = $apiClient->leads();
     $usersService = $apiClient->users();
@@ -20,18 +19,24 @@ function main()
     $view = [];
     $view['leads'] = [];
     $view['users'] = [];
-    foreach ($leadsService->get()->all() as $lead) {
-        $leadArr = [];
-        $leadArr['id'] = $lead->id;
-        $leadArr['name'] = $lead->name;
-        $view['leads'][] = $leadArr;
-    }
+    try {
+        handlersExecute($apiClient);
+        foreach ($leadsService->get()->all() as $lead) {
+            $leadArr = [];
+            $leadArr['id'] = $lead->id;
+            $leadArr['name'] = $lead->name;
+            $view['leads'][] = $leadArr;
+        }
 
-    foreach ($usersService->get()->all() as $user) {
-        $userArr = [];
-        $userArr['id'] = $user->id;
-        $userArr['name'] = $user->name;
-        $view['users'][] = $userArr;
+        foreach ($usersService->get()->all() as $user) {
+            $userArr = [];
+            $userArr['id'] = $user->id;
+            $userArr['name'] = $user->name;
+            $view['users'][] = $userArr;
+        }
+    }
+    catch (AmoCRMApiException $e) {
+        printError($e);
     }
 
     return $view;
