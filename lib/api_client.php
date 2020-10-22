@@ -62,6 +62,54 @@ function getToken()
     }
 }
 
+function saveSessionToken($accessToken) {
+    if (
+        isset($accessToken)
+        && isset($accessToken['accessToken'])
+        && isset($accessToken['refreshToken'])
+        && isset($accessToken['expires'])
+        && isset($accessToken['baseDomain'])
+    ) {
+        $data = [
+            'accessToken' => $accessToken['accessToken'],
+            'expires' => $accessToken['expires'],
+            'refreshToken' => $accessToken['refreshToken'],
+            'baseDomain' => $accessToken['baseDomain'],
+        ];
+
+        $_SESSION['token'] = $data;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+function getSessionToken()
+{
+    if (empty($_SESSION['token'])) {
+        return null;
+    }
+
+    $accessToken = $_SESSION['token'];
+
+    if (
+        isset($accessToken)
+        && isset($accessToken['accessToken'])
+        && isset($accessToken['refreshToken'])
+        && isset($accessToken['expires'])
+        && isset($accessToken['baseDomain'])
+    ) {
+        return new AccessToken([
+            'access_token' => $accessToken['accessToken'],
+            'refresh_token' => $accessToken['refreshToken'],
+            'expires' => $accessToken['expires'],
+            'baseDomain' => $accessToken['baseDomain'],
+        ]);
+    } else {
+        return null;
+    }
+}
+
 function getApiClient()
 {
     $clientId = _env('CLIENT_ID', '');
@@ -70,7 +118,7 @@ function getApiClient()
 
     $apiClient = new AmoCRMApiClient($clientId, $clientSecret, $redirectUri);
 
-    $accessToken = getToken();
+    $accessToken = getSessionToken();
     if (!$accessToken) {
 
         if (isset($_GET['referer'])) {
@@ -99,7 +147,7 @@ function getApiClient()
             $accessToken = $apiClient->getOAuthClient()->getAccessTokenByCode($_GET['code']);
 
             if (!$accessToken->hasExpired()) {
-                saveToken([
+                saveSessionToken([
                     'accessToken' => $accessToken->getToken(),
                     'refreshToken' => $accessToken->getRefreshToken(),
                     'expires' => $accessToken->getExpires(),
